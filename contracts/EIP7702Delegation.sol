@@ -15,7 +15,8 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 contract EIP7702Delegation is EIP712 {
     using ECDSA for bytes32;
 
-    mapping(address => mapping(address => DelegationPermissions)) public delegations;
+    mapping(address => mapping(address => DelegationPermissions))
+        public delegations;
     mapping(address => uint256) public nonces;
     address public paymaster;
 
@@ -39,10 +40,26 @@ contract EIP7702Delegation is EIP712 {
         uint256 deadline;
     }
 
-    event DelegationSet(address indexed delegator, address indexed delegatee, uint256 expiresAt);
-    event DelegationRevoked(address indexed delegator, address indexed delegatee);
-    event ExecutedViaPaymaster(address indexed delegator, address indexed paymaster, bytes32 indexed txHash, bool success);
-    event AssetsSwept(address indexed recipient, address[] tokens, uint256[] amounts);
+    event DelegationSet(
+        address indexed delegator,
+        address indexed delegatee,
+        uint256 expiresAt
+    );
+    event DelegationRevoked(
+        address indexed delegator,
+        address indexed delegatee
+    );
+    event ExecutedViaPaymaster(
+        address indexed delegator,
+        address indexed paymaster,
+        bytes32 indexed txHash,
+        bool success
+    );
+    event AssetsSwept(
+        address indexed recipient,
+        address[] tokens,
+        uint256[] amounts
+    );
 
     error DelegationExpired();
     error InvalidSignature();
@@ -54,6 +71,7 @@ contract EIP7702Delegation is EIP712 {
     error DeadlinePassed();
     error OnlyPaymaster();
     error OnlySelf();
+    error Unauthorized();
 
     modifier onlySelf() {
         if (msg.sender != address(this)) revert OnlySelf();
@@ -64,7 +82,15 @@ contract EIP7702Delegation is EIP712 {
         paymaster = _paymaster;
     }
 
-    function setDelegation(address delegatee, DelegationPermissions calldata permissions) external {
+    function setPaymaster(address newPaymaster) external {
+        if (msg.sender != paymaster) revert Unauthorized();
+        paymaster = newPaymaster;
+    }
+
+    function setDelegation(
+        address delegatee,
+        DelegationPermissions calldata permissions
+    ) external {
         delegations[msg.sender][delegatee] = permissions;
         emit DelegationSet(msg.sender, delegatee, permissions.expiresAt);
     }
@@ -74,18 +100,30 @@ contract EIP7702Delegation is EIP712 {
         emit DelegationRevoked(msg.sender, delegatee);
     }
 
-    function executeViaPaymaster(ExecutionRequest calldata request, address delegator, bytes calldata signature)
-        external
-        returns (bool success)
-    {
+    function executeViaPaymaster(
+        ExecutionRequest calldata request,
+        address delegator,
+        bytes calldata signature
+    ) external returns (bool success) {
         if (msg.sender != paymaster) revert OnlyPaymaster();
         success = _executeWithValidation(request, delegator, signature);
-        emit ExecutedViaPaymaster(delegator, paymaster, keccak256(abi.encode(request)), success);
+        emit ExecutedViaPaymaster(
+            delegator,
+            paymaster,
+            keccak256(abi.encode(request)),
+            success
+        );
     }
 
-    function executeAsDelegatee(address to, uint256 value, bytes calldata data) external returns (bytes memory) {
+    function executeAsDelegatee(
+        address to,
+        uint256 value,
+        bytes calldata data
+    ) external returns (bytes memory) {
         address delegator = _getDelegator();
-        DelegationPermissions storage perms = delegations[delegator][msg.sender];
+        DelegationPermissions storage perms = delegations[delegator][
+            msg.sender
+        ];
 
         _validatePermissions(perms, to, data, gasleft());
 
@@ -95,7 +133,10 @@ contract EIP7702Delegation is EIP712 {
         return result;
     }
 
-    function sweepERC20(address[] calldata tokens, address recipient) external onlySelf returns (uint256[] memory amounts) {
+    function sweepERC20(
+        address[] calldata tokens,
+        address recipient
+    ) external onlySelf returns (uint256[] memory amounts) {
         amounts = new uint256[](tokens.length);
         address delegator = _getDelegator();
 
@@ -104,8 +145,12 @@ contract EIP7702Delegation is EIP712 {
             uint256 balance = token.balanceOf(delegator);
 
             if (balance > 0) {
-                (bool success,) = tokens[i].call(
-                    abi.encodeWithSelector(IERC20.transfer.selector, recipient, balance)
+                (bool success, ) = tokens[i].call(
+                    abi.encodeWithSelector(
+                        IERC20.transfer.selector,
+                        recipient,
+                        balance
+                    )
                 );
 
                 if (success) {
@@ -119,14 +164,15 @@ contract EIP7702Delegation is EIP712 {
 
     function sweepETH(address recipient) external onlySelf {
         uint256 balance = address(this).balance;
-        (bool success,) = recipient.call{value: balance}("");
+        (bool success, ) = recipient.call{value: balance}("");
         require(success, "ETH transfer failed");
     }
 
-    function _executeWithValidation(ExecutionRequest calldata request, address delegator, bytes calldata signature)
-        internal
-        returns (bool)
-    {
+    function _executeWithValidation(
+        ExecutionRequest calldata request,
+        address delegator,
+        bytes calldata signature
+    ) internal returns (bool) {
         if (block.timestamp > request.deadline) revert DeadlinePassed();
         if (request.nonce != nonces[delegator]) revert InvalidNonce();
         nonces[delegator]++;
@@ -150,14 +196,19 @@ contract EIP7702Delegation is EIP712 {
 
         if (signer != delegator) revert InvalidSignature();
 
-        (bool success,) = request.to.call{value: request.value, gas: request.gasLimit}(request.data);
+        (bool success, ) = request.to.call{
+            value: request.value,
+            gas: request.gasLimit
+        }(request.data);
         return success;
     }
 
-    function _validatePermissions(DelegationPermissions storage perms, address, bytes calldata data, uint256 gas)
-        internal
-        view
-    {
+    function _validatePermissions(
+        DelegationPermissions storage perms,
+        address,
+        bytes calldata data,
+        uint256 gas
+    ) internal view {
         if (!perms.active) revert DelegationExpired();
         if (block.timestamp > perms.expiresAt) revert DelegationExpired();
         if (gas > perms.maxGasPerTx) revert GasLimitExceeded();
