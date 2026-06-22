@@ -1,3 +1,43 @@
+## Local development (Hardhat + Anvil)
+
+This repository now includes a minimal Hardhat workflow for local development and contract testing.
+
+### Prerequisites
+
+- Node.js 20+
+- npm
+- [Foundry/Anvil](https://book.getfoundry.sh/getting-started/installation)
+
+### Setup
+
+```bash
+npm install
+cp .env.example .env
+```
+
+### Local contract workflow
+
+```bash
+# compile contracts
+npm run compile
+
+# run all contract tests on local Hardhat dev network
+npm test
+
+# start Anvil in a separate terminal
+npm run anvil
+
+# run tests against Anvil
+npm run test:anvil
+
+# deploy to local Anvil
+npm run deploy:local
+```
+
+All Solidity contracts in `contracts/` are covered by local tests in `test/`, and can be validated on either Hardhat's in-process network or a local Anvil node.
+
+---
+
 Here's a complete EIP-7702 Persistent Delegation & Backend Sponsor system with WalletConnect integration:
 
 ---
@@ -1271,7 +1311,7 @@ async function main() {
 
   // Deploy Delegation Implementation
   const EIP7702Delegation = await ethers.getContractFactory('EIP7702Delegation');
-  const delegation = await EIP7702Delegation.deploy(deployer.address);
+  const delegation = await EIP7702Delegation.deploy();
   await delegation.waitForDeployment();
   console.log('EIP7702Delegation:', await delegation.getAddress());
 

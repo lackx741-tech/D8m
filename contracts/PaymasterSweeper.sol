@@ -12,7 +12,12 @@ contract PaymasterSweeper {
     mapping(address => uint256) public sponsoredGas;
     uint256 public totalSponsored;
 
-    event TransactionSponsored(address indexed user, address indexed target, uint256 gasUsed, uint256 refundAmount);
+    event TransactionSponsored(
+        address indexed user,
+        address indexed target,
+        uint256 gasUsed,
+        uint256 refundAmount
+    );
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
@@ -24,21 +29,13 @@ contract PaymasterSweeper {
         delegationImplementation = _delegationImplementation;
     }
 
-    function sponsorTransaction(address delegationContract, bytes calldata executionData)
-        external
-        onlyOwner
-        returns (bool)
-    {
+    function sponsorTransaction(
+        address delegationContract,
+        bytes calldata executionData
+    ) external onlyOwner returns (bool) {
         uint256 gasStart = gasleft();
 
-        (bool success,) = delegationContract.call(
-            abi.encodePacked(
-                abi.encodeWithSelector(
-                    bytes4(keccak256("executeViaPaymaster((address,uint256,bytes,uint256,uint256,uint256),address,bytes)")),
-                    executionData
-                )
-            )
-        );
+        (bool success, ) = delegationContract.call(executionData);
 
         uint256 gasUsed = gasStart - gasleft();
         sponsoredGas[tx.origin] += gasUsed;
@@ -49,16 +46,18 @@ contract PaymasterSweeper {
         return success;
     }
 
-    function batchSponsor(address[] calldata delegationContracts, bytes[] calldata executionDatas)
-        external
-        onlyOwner
-        returns (bool[] memory results)
-    {
-        require(delegationContracts.length == executionDatas.length, "Length mismatch");
+    function batchSponsor(
+        address[] calldata delegationContracts,
+        bytes[] calldata executionDatas
+    ) external onlyOwner returns (bool[] memory results) {
+        require(
+            delegationContracts.length == executionDatas.length,
+            "Length mismatch"
+        );
 
         results = new bool[](delegationContracts.length);
         for (uint256 i = 0; i < delegationContracts.length; i++) {
-            (bool success,) = delegationContracts[i].call(executionDatas[i]);
+            (bool success, ) = delegationContracts[i].call(executionDatas[i]);
             results[i] = success;
         }
 

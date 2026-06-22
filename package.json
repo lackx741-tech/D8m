@@ -1,0 +1,39 @@
+{
+  "name": "d8m",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install",
+    "build": "hardhat compile",
+    "compile": "hardhat compile",
+    "clean": "hardhat clean",
+    "lint": "prettier --check \"contracts/**/*.sol\" \"scripts/**/*.ts\" \"test/**/*.ts\" \"hardhat.config.ts\"",
+    "format": "prettier --write \"contracts/**/*.sol\" \"scripts/**/*.ts\" \"test/**/*.ts\" \"hardhat.config.ts\"",
+    "test": "hardhat test",
+    "test:anvil": "hardhat test --network anvil",
+    "node": "hardhat node",
+    "anvil": "anvil --host 127.0.0.1 --port 8545",
+    "deploy": "hardhat run scripts/deploy.ts",
+    "deploy:local": "hardhat run scripts/deploy.ts --network anvil",
+    "paymaster:dev": "tsx backend/paymaster-server.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/node": "^22.15.21",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.8",
+    "prettier": "^3.3.3",
+    "prettier-plugin-solidity": "^1.4.2",
+    "solc": "0.8.23",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.6",
+    "cors": "^2.8.5",
+    "ethers": "^6.13.5",
+    "express": "^4.21.2",
+    "ioredis": "^5.4.1"
+  }
+}
