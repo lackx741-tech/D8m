@@ -1311,7 +1311,7 @@ async function main() {
 
   // Deploy Delegation Implementation
   const EIP7702Delegation = await ethers.getContractFactory('EIP7702Delegation');
-  const delegation = await EIP7702Delegation.deploy(deployer.address);
+  const delegation = await EIP7702Delegation.deploy();
   await delegation.waitForDeployment();
   console.log('EIP7702Delegation:', await delegation.getAddress());
 

@@ -7,6 +7,7 @@ dotenv.config();
 
 subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args, _hre, runSuper) => {
   if (args.solcVersion === "0.8.23") {
+    // Use locally-installed solc-js so compile works even when binaries.soliditylang.org is unavailable.
     return {
       compilerPath: require.resolve("solc/soljson.js"),
       isSolcJs: true,

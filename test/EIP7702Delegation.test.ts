@@ -1,15 +1,17 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
+const ONE_HOUR_IN_SECONDS = 3600;
+
 describe("EIP7702Delegation", function () {
   it("sets and revokes delegation", async function () {
     const [delegator, delegatee] = await ethers.getSigners();
 
     const Delegation = await ethers.getContractFactory("EIP7702Delegation");
-    const delegation = await Delegation.deploy(delegator.address);
+    const delegation = await Delegation.deploy();
     await delegation.waitForDeployment();
 
-    const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+    const expiresAt = Math.floor(Date.now() / 1000) + ONE_HOUR_IN_SECONDS;
 
     await delegation.connect(delegator).setDelegation(delegatee.address, {
       active: true,
@@ -40,10 +42,10 @@ describe("EIP7702Delegation", function () {
   });
 
   it("allows only paymaster for executeViaPaymaster", async function () {
-    const [paymaster, other] = await ethers.getSigners();
+    const [, other] = await ethers.getSigners();
 
     const Delegation = await ethers.getContractFactory("EIP7702Delegation");
-    const delegation = await Delegation.deploy(paymaster.address);
+    const delegation = await Delegation.deploy();
     await delegation.waitForDeployment();
 
     await expect(
@@ -54,7 +56,7 @@ describe("EIP7702Delegation", function () {
           data: "0x",
           gasLimit: 21000,
           nonce: 0,
-          deadline: Math.floor(Date.now() / 1000) + 3600,
+          deadline: Math.floor(Date.now() / 1000) + ONE_HOUR_IN_SECONDS,
         },
         other.address,
         "0x",

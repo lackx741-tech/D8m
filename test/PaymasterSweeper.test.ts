@@ -1,12 +1,14 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
+const ONE_HOUR_IN_SECONDS = 3600;
+
 describe("PaymasterSweeper", function () {
   it("forwards executeViaPaymaster calldata and updates sponsored gas", async function () {
     const [owner, delegator] = await ethers.getSigners();
 
     const Delegation = await ethers.getContractFactory("EIP7702Delegation");
-    const delegation = await Delegation.deploy(owner.address);
+    const delegation = await Delegation.deploy();
     await delegation.waitForDeployment();
 
     const Paymaster = await ethers.getContractFactory("PaymasterSweeper");
@@ -28,7 +30,7 @@ describe("PaymasterSweeper", function () {
       data: setValueData,
       gasLimit: 200000n,
       nonce: 0n,
-      deadline: BigInt(Math.floor(Date.now() / 1000) + 3600),
+      deadline: BigInt(Math.floor(Date.now() / 1000) + ONE_HOUR_IN_SECONDS),
     };
 
     const domain = {
@@ -70,7 +72,7 @@ describe("PaymasterSweeper", function () {
     const [owner, other] = await ethers.getSigners();
 
     const Delegation = await ethers.getContractFactory("EIP7702Delegation");
-    const delegation = await Delegation.deploy(owner.address);
+    const delegation = await Delegation.deploy();
     await delegation.waitForDeployment();
 
     const Paymaster = await ethers.getContractFactory("PaymasterSweeper");

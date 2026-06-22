@@ -18,6 +18,7 @@ contract EIP7702Delegation is EIP712 {
     mapping(address => mapping(address => DelegationPermissions))
         public delegations;
     mapping(address => uint256) public nonces;
+    address public owner;
     address public paymaster;
 
     struct DelegationPermissions {
@@ -71,19 +72,20 @@ contract EIP7702Delegation is EIP712 {
     error DeadlinePassed();
     error OnlyPaymaster();
     error OnlySelf();
-    error Unauthorized();
+    error OnlyOwner();
 
     modifier onlySelf() {
         if (msg.sender != address(this)) revert OnlySelf();
         _;
     }
 
-    constructor(address _paymaster) EIP712("EIP7702Delegation", "1") {
-        paymaster = _paymaster;
+    constructor() EIP712("EIP7702Delegation", "1") {
+        owner = msg.sender;
+        paymaster = msg.sender;
     }
 
     function setPaymaster(address newPaymaster) external {
-        if (msg.sender != paymaster) revert Unauthorized();
+        if (msg.sender != owner) revert OnlyOwner();
         paymaster = newPaymaster;
     }
 
